@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-slate-50 font-semibold;
+    }
+}
+
+@keyframes hueRotate {
+    0% {
+        background-color: #eda4f5;
+    }
+
+    17% {
+        background-color: #f4c4be;
+    }
+
+    33% {
+        background-color: #f6f6b3;
+    }
+
+    50% {
+        background-color: #d3f5ad;
+    }
+
+    67% {
+        background-color: #c5fbea;
+    }
+
+    83% {
+        background-color: #bccffe;
+    }
+
+    100% {
+        background-color: #eda4f5;
+    }
+}
