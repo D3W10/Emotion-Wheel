@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Button from "@/components/Button";
-import { CircleQuestion } from "@/components/Icons";
+import Icons from "@/components/Icons";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { innerData, middleData, outerData } from "@/public/data";
 import type { MakeOptional } from "@mui/x-charts/internals";
@@ -23,6 +23,7 @@ const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "typ
         innerRadius: 110,
         outerRadius: 190,
         cornerRadius: 3,
+        startAngle: -30,
         id: "middle",
         data: middleData
     },
@@ -30,6 +31,7 @@ const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "typ
         innerRadius: 190,
         outerRadius: 270,
         cornerRadius: 3,
+        startAngle: -30,
         id: "outer",
         data: outerData
     }
@@ -50,7 +52,7 @@ export default function Home() {
                     <div className="flex flex-col justify-center items-center space-y-10">
                         <Button onClick={() => setHomeScreen(false)}>Start</Button>
                         <Button className="flex space-x-2">
-                            <CircleQuestion className="w-6 h-6" />
+                            <Icons.CircleQuestion className="w-6 h-6" />
                             <span>How it works</span>
                         </Button>
                     </div>
