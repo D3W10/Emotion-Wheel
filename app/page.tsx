@@ -51,7 +51,7 @@ export default function Home() {
                     </div>
                     <div className="flex flex-col justify-center items-center space-y-10">
                         <Button onClick={() => setHomeScreen(false)}>Start</Button>
-                        <Button className="flex space-x-2">
+                        <Button secondary>
                             <Icons.CircleQuestion className="w-6 h-6" />
                             <span>How it works</span>
                         </Button>
