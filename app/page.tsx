@@ -84,7 +84,7 @@ export default function Home() {
     return (
         <main className="min-h-screen">
             {stage === Stages.Intro && (
-                <div className={`h-full p-24 flex flex-col justify-center items-center absolute inset-0 bg-white/75 backdrop-blur space-y-40 transition duration-500 z-10 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
+                <div className={`h-full p-24 flex flex-col justify-center items-center absolute inset-0 bg-white/75 backdrop-blur space-y-40 transition duration-500 z-10 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setStage(Stages.Intro)}>
                     <div className="flex flex-col justify-center items-center space-y-10">
                         <Image src="/logo.svg" alt="Logo" width={72} height={72} />
                         <h1 className="text-7xl font-bold">Emotion Wheel</h1>
