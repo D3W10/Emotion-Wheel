@@ -9,7 +9,7 @@ import { motion, useSpring } from "framer-motion";
 import { pieArcLabelClasses, PieChart } from "@mui/x-charts/PieChart";
 import { innerData, middleData, outerData } from "@/public/data";
 import type { MakeOptional } from "@mui/x-charts/internals";
-import type { PieSeriesType, PieValueType } from "@mui/x-charts/models/seriesType";
+import type { PieItemIdentifier, PieSeriesType, PieValueType } from "@mui/x-charts/models/seriesType";
 
 const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "type">[] = [
     {
@@ -58,7 +58,7 @@ const pieScale: { [key in Stages]: number } = {
 export default function Home() {
     const [stage, setStage] = useState<Stages>(Stages.Intro);
     const [isAnimated, setAnimated] = useState(true);
-    const [itemData, setItemData] = useState();
+    const [itemData, setItemData] = useState<PieItemIdentifier>();
 
     const springConfig = { damping: 50, stiffness: 100 };
     const rotateSpring = useSpring(0, springConfig);
