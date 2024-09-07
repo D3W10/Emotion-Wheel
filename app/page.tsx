@@ -112,6 +112,10 @@ export default function Home() {
                     ) : (
                         <div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
                             <h2 className="text-6xl font-bold">How it works</h2>
+                            <div className="w-128 text-lg text-center space-y-5">
+                                <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
+                                <p>Just select the emotion that better describes what you're feeling and an overview will be preseted to you in the end.</p>
+                            </div>
                             <Button secondary onClick={() => setHelp(false)}>
                                 <Icons.ArrowLeft className="w-6 h-6" />
                                 <span>Go back</span>
@@ -135,20 +139,31 @@ export default function Home() {
                                 fill: "white",
                                 filter: "drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))"
                             },
-                            [`& g`]: {
+                            [`& > g`]: {
                                 transition: "opacity 0.5s"
                             },
-                            [`& g:nth-of-type(4)`]: {
-                                opacity: stage !== Stages.Intro ? "1" : "0",
-                                pointerEvents: stage !== Stages.Intro ? "auto" : "none"
+                            [`& > g > g:nth-of-type(1)`]: {
+                                pointerEvents: stage == Stages.First ? "auto" : "none"
                             },
-                            [`& g:nth-of-type(2), & g:nth-of-type(5)`]: {
+                            [`& > g > g:nth-of-type(2)`]: {
                                 opacity: stage !== Stages.First ? "1" : "0",
-                                pointerEvents: stage !== Stages.First ? "auto" : "none"
+                                pointerEvents: stage == Stages.Second ? "auto" : "none"
                             },
-                            [`& g:nth-of-type(3), & g:nth-of-type(6)`]: {
+                            [`& > g > g:nth-of-type(3)`]: {
                                 opacity: stage !== Stages.First && stage !== Stages.Second ? "1" : "0",
-                                pointerEvents: stage !== Stages.First && stage !== Stages.Second ? "auto" : "none"
+                                pointerEvents: stage == Stages.Third ? "auto" : "none"
+                            },
+                            [`& > g > g:nth-of-type(4)`]: {
+                                opacity: stage !== Stages.Intro ? "1" : "0",
+                                pointerEvents: "none"
+                            },
+                            [`& > g > g:nth-of-type(5)`]: {
+                                opacity: stage !== Stages.Intro ? "1" : "0",
+                                pointerEvents: "none"
+                            },
+                            [`& > g > g:nth-of-type(6)`]: {
+                                opacity: stage !== Stages.Intro ? "1" : "0",
+                                pointerEvents: "none"
                             }
                         }}
                     />
@@ -156,6 +171,11 @@ export default function Home() {
                 <IconButton className="fixed bottom-6 left-6" onClick={onReset}>
                     <Icons.Home className="w-8 h-8" />
                 </IconButton>
+                {stage != Stages.Intro && stage != Stages.First && (
+                    <IconButton className="fixed bottom-6 right-6">
+                        <Icons.ArrowStepInLeft className="w-8 h-8" />
+                    </IconButton>
+                )}
             </div>
         </main>
     )
