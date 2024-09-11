@@ -23,8 +23,8 @@ enum Stages {
 const pieScale: { [key in Stages]: number } = {
     [Stages.Intro]: 1.6,
     [Stages.First]: 2.8,
-    [Stages.Second]: 1,
-    [Stages.Third]: 1,
+    [Stages.Second]: 2.8,
+    [Stages.Third]: 2.8,
     [Stages.Final]: 1.6
 }
 
@@ -56,6 +56,7 @@ export default function Home() {
             outerRadius: 190,
             cornerRadius: 3,
             startAngle: -30,
+            arcLabel: "label",
             id: "middle",
             data: middleData
         },
@@ -64,6 +65,7 @@ export default function Home() {
             outerRadius: 270,
             cornerRadius: 3,
             startAngle: -30,
+            arcLabel: "label",
             id: "outer",
             data: outerData
         }
@@ -85,10 +87,32 @@ export default function Home() {
         setStage(Stages.First);
         
         setTimeout(() => setRotateVal(Math.ceil(rotateVal.current / 360) * 360), 100);
+
+        document.querySelectorAll<SVGTextElement>("svg > g > g:nth-of-type(5) > g > text").forEach((element, index) => {
+            const transformParse = element.style.getPropertyValue("transform").match(/(?<=\()([-\d.]+px)(?:, )([-\d.]+px)/);
+            
+            element.style.setProperty("rotate", `calc(${index} * 10.5882deg - 120deg + 5.2941deg)`);
+
+            if (transformParse) {
+                const [, x, y] = transformParse;
+                element.style.setProperty("transform-origin", `${x} ${y}`);
+            }
+        });
     }
 
     function onReset() {
         setStage(Stages.Intro);
+    }
+
+    function onItemClick(pie: PieItemIdentifier) {
+        setItemData(pie);
+    
+        if (pie.seriesId === "inner")
+            setStage(Stages.Second);
+        else if (pie.seriesId === "middle")
+            setStage(Stages.Third);
+        else if (pie.seriesId === "outer")
+            setStage(Stages.Final);
     }
 
     return (
@@ -132,12 +156,18 @@ export default function Home() {
                         tooltip={{ trigger: "none" }}
                         margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
                         slotProps={{ legend: { hidden: true } }}
-                        onItemClick={(_, d) => { console.log(d);setItemData(d)}}
+                        onItemClick={(_, d) => onItemClick(d)}
                         sx={{
                             [`& .${pieArcLabelClasses.root}`]: {
                                 fontSize: "0.7rem",
                                 fill: "white",
                                 filter: "drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))"
+                            },
+                            [`&  > g > g:nth-of-type(5) .${pieArcLabelClasses.root}`]: {
+                                fontSize: "0.6rem"
+                            },
+                            [`&  > g > g:nth-of-type(6) .${pieArcLabelClasses.root}`]: {
+                                fontSize: "0.5rem"
                             },
                             [`& > g`]: {
                                 transition: "opacity 0.5s"
@@ -154,15 +184,15 @@ export default function Home() {
                                 pointerEvents: stage == Stages.Third ? "auto" : "none"
                             },
                             [`& > g > g:nth-of-type(4)`]: {
-                                opacity: stage !== Stages.Intro ? "1" : "0",
+                                opacity: stage >= Stages.First ? "1" : "0",
                                 pointerEvents: "none"
                             },
                             [`& > g > g:nth-of-type(5)`]: {
-                                opacity: stage !== Stages.Intro ? "1" : "0",
+                                opacity: stage >= Stages.Second ? "1" : "0",
                                 pointerEvents: "none"
                             },
                             [`& > g > g:nth-of-type(6)`]: {
-                                opacity: stage !== Stages.Intro ? "1" : "0",
+                                opacity: stage >= Stages.Third ? "1" : "0",
                                 pointerEvents: "none"
                             }
                         }}
