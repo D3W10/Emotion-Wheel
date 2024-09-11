@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { animated, useSpringValue } from "@react-spring/web";
 import { useInterval } from "@/components/useInterval";
 import Button from "@/components/Button";
 import Icons from "@/components/Icons";
@@ -9,6 +10,7 @@ import IconButton from "@/components/IconButton";
 import { motion, useSpring } from "framer-motion";
 import { pieArcLabelClasses, PieChart } from "@mui/x-charts/PieChart";
 import { innerData, middleData, outerData } from "@/public/data";
+import { springConfig } from "@/public/spring";
 import type { MakeOptional } from "@mui/x-charts/internals";
 import type { PieItemIdentifier, PieSeriesType, PieValueType } from "@mui/x-charts/models/seriesType";
 
@@ -38,12 +40,11 @@ export default function Home() {
     const [tItemData, setTItemData] = useState<PieItemIdentifier>();
 
     let rotateVal = useRef(0);
-    const springConfig = { damping: 50, stiffness: 100 };
 
-    const xSpring = useSpring(0, springConfig);
-    const rotateSpring = useSpring(rotateVal.current, springConfig);
-    const scaleSpring = useSpring(0, springConfig);
-    const setRotateVal = (v: number) => { rotateVal.current = v; rotateSpring.set(v) };
+    const rotateSpring = useSpringValue(rotateVal.current, springConfig);
+    const scaleSpring = useSpringValue(0, springConfig);
+    const xSpring = useSpringValue(0, springConfig);
+    const setRotateVal = (v: number) => { rotateVal.current = v; rotateSpring.start(v) };
 
     const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "type">[] = [
         {
@@ -78,19 +79,25 @@ export default function Home() {
     const angles = [453.5294, 702.353, 337.0589, 268.2353, 199.4118, 506.4706];
 
     useEffect(() => {
-        scaleSpring.set(pieScale[stage])
+        scaleSpring.start(pieScale[stage]);
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
             setTimeout(() => setAnimated(true), 50);
         }
+        else if (stage === Stages.Second)
+            xSpring.start(-180);
+        else if (stage === Stages.Third)
+            xSpring.start(-360);
+        else
+            xSpring.start(0);
     }, [stage]);
 
     useInterval(() => setRotateVal(rotateVal.current + 1), stage === Stages.Intro ? 100 : null);
 
     function onStart() {
         setAnimated(false);
-        firstStage();
+        setStage(Stages.First);
         
         setTimeout(() => setRotateVal(Math.ceil(rotateVal.current / 360) * 360), 100);
 
@@ -112,24 +119,24 @@ export default function Home() {
 
     function onBack() {
         if (stage === Stages.Second && fItemData) {
-            firstStage();
+            setStage(Stages.First);
             setRotateVal(rotateVal.current - angles[fItemData.dataIndex]);
         }
         else if (stage === Stages.Third && sItemData) {
-            secondStage();
+            setStage(Stages.Second);
             setRotateVal(rotateVal.current + angles[sItemData.dataIndex]);
         }
     }
 
     function onItemClick(pie: PieItemIdentifier) {
         if (pie.seriesId === "inner") {
-            secondStage();
+            setStage(Stages.Second);
             setFItemData(pie);
 
             setRotateVal(rotateVal.current + angles[pie.dataIndex]);
         }
         else if (pie.seriesId === "middle") {
-            thirdStage();
+            setStage(Stages.Third);
             setSItemData(pie);
         }
         else if (pie.seriesId === "outer") {
@@ -188,7 +195,7 @@ export default function Home() {
             )}
             <div className="h-full flex justify-center items-center absolute inset-0">
                 <p className={`absolute top-20 text-3xl ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
-                <motion.div className="h-full aspect-square" style={{ x: xSpring, rotate: rotateSpring, scale: scaleSpring }}>
+                <animated.div className="h-full aspect-square" style={{ x: xSpring, rotate: rotateSpring, scale: scaleSpring }}>
                     <PieChart
                         series={series}
                         tooltip={{ trigger: "none" }}
@@ -235,7 +242,7 @@ export default function Home() {
                             }
                         }}
                     />
-                </motion.div>
+                </animated.div>
                 <IconButton className="fixed bottom-6 left-6" onClick={onReset}>
                     <Icons.Home className="w-8 h-8" />
                 </IconButton>
