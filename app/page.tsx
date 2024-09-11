@@ -33,10 +33,14 @@ export default function Home() {
     const [showHomeScreen, setHomeScreen] = useState(true);
     const [showHelp, setHelp] = useState(false);
     const [isAnimated, setAnimated] = useState(true);
-    const [itemData, setItemData] = useState<PieItemIdentifier>();
+    const [fItemData, setFItemData] = useState<PieItemIdentifier>();
+    const [sItemData, setSItemData] = useState<PieItemIdentifier>();
+    const [tItemData, setTItemData] = useState<PieItemIdentifier>();
 
     let rotateVal = useRef(0);
     const springConfig = { damping: 50, stiffness: 100 };
+
+    const xSpring = useSpring(0, springConfig);
     const rotateSpring = useSpring(rotateVal.current, springConfig);
     const scaleSpring = useSpring(0, springConfig);
     const setRotateVal = (v: number) => { rotateVal.current = v; rotateSpring.set(v) };
@@ -71,6 +75,8 @@ export default function Home() {
         }
     ];
 
+    const angles = [453.5294, 702.353, 337.0589, 268.2353, 199.4118, 506.4706];
+
     useEffect(() => {
         scaleSpring.set(pieScale[stage])
 
@@ -84,7 +90,7 @@ export default function Home() {
 
     function onStart() {
         setAnimated(false);
-        setStage(Stages.First);
+        firstStage();
         
         setTimeout(() => setRotateVal(Math.ceil(rotateVal.current / 360) * 360), 100);
 
@@ -104,15 +110,47 @@ export default function Home() {
         setStage(Stages.Intro);
     }
 
+    function onBack() {
+        if (stage === Stages.Second && fItemData) {
+            firstStage();
+            setRotateVal(rotateVal.current - angles[fItemData.dataIndex]);
+        }
+        else if (stage === Stages.Third && sItemData) {
+            secondStage();
+            setRotateVal(rotateVal.current + angles[sItemData.dataIndex]);
+        }
+    }
+
     function onItemClick(pie: PieItemIdentifier) {
-        setItemData(pie);
-    
-        if (pie.seriesId === "inner")
-            setStage(Stages.Second);
-        else if (pie.seriesId === "middle")
-            setStage(Stages.Third);
-        else if (pie.seriesId === "outer")
+        if (pie.seriesId === "inner") {
+            secondStage();
+            setFItemData(pie);
+
+            setRotateVal(rotateVal.current + angles[pie.dataIndex]);
+        }
+        else if (pie.seriesId === "middle") {
+            thirdStage();
+            setSItemData(pie);
+        }
+        else if (pie.seriesId === "outer") {
             setStage(Stages.Final);
+            setTItemData(pie);
+        }
+    }
+
+    function firstStage() {
+        setStage(Stages.First);
+        xSpring.set(0);
+    }
+
+    function secondStage() {
+        setStage(Stages.Second);
+        xSpring.set(-175);
+    }
+
+    function thirdStage() {
+        setStage(Stages.Third);
+        xSpring.set(-350);
     }
 
     return (
@@ -150,7 +188,7 @@ export default function Home() {
             )}
             <div className="h-full flex justify-center items-center absolute inset-0">
                 <p className={`absolute top-20 text-3xl ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
-                <motion.div className="h-full aspect-square" style={{ rotate: rotateSpring, scale: scaleSpring }}>
+                <motion.div className="h-full aspect-square" style={{ x: xSpring, rotate: rotateSpring, scale: scaleSpring }}>
                     <PieChart
                         series={series}
                         tooltip={{ trigger: "none" }}
@@ -202,7 +240,7 @@ export default function Home() {
                     <Icons.Home className="w-8 h-8" />
                 </IconButton>
                 {stage != Stages.Intro && stage != Stages.First && (
-                    <IconButton className="fixed bottom-6 right-6">
+                    <IconButton className="fixed bottom-6 right-6" onClick={onBack}>
                         <Icons.ArrowStepInLeft className="w-8 h-8" />
                     </IconButton>
                 )}
