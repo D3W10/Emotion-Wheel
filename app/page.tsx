@@ -7,10 +7,9 @@ import { useInterval } from "@/components/useInterval";
 import Button from "@/components/Button";
 import Icons from "@/components/Icons";
 import IconButton from "@/components/IconButton";
-import { motion, useSpring } from "framer-motion";
-import { pieArcLabelClasses, PieChart } from "@mui/x-charts/PieChart";
+import { PieArcLabelProps, PieChart } from "@mui/x-charts/PieChart";
 import { innerData, middleData, outerData } from "@/public/data";
-import { springConfig } from "@/public/spring";
+import { springConfig } from "@/public/utils";
 import type { MakeOptional } from "@mui/x-charts/internals";
 import type { PieItemIdentifier, PieSeriesType, PieValueType } from "@mui/x-charts/models/seriesType";
 
@@ -100,17 +99,6 @@ export default function Home() {
         setStage(Stages.First);
         
         setTimeout(() => setRotateVal(Math.ceil(rotateVal.current / 360) * 360), 100);
-
-        document.querySelectorAll<SVGTextElement>("svg > g > g:nth-of-type(5) > g > text").forEach((element, index) => {
-            const transformParse = element.style.getPropertyValue("transform").match(/(?<=\()([-\d.]+px)(?:, )([-\d.]+px)/);
-            
-            element.style.setProperty("rotate", `calc(${index} * 10.5882deg - 120deg + 5.2941deg)`);
-
-            if (transformParse) {
-                const [, x, y] = transformParse;
-                element.style.setProperty("transform-origin", `${x} ${y}`);
-            }
-        });
     }
 
     function onReset() {
@@ -145,27 +133,46 @@ export default function Home() {
         }
     }
 
-    function firstStage() {
-        setStage(Stages.First);
-        xSpring.set(0);
-    }
+    const ArcLabel = (props: PieArcLabelProps) => {
+        const textSz = props.id == "inner" ? "text-[0.7rem]" : props.id == "middle" ? "text-[0.6rem]" : "text-[0.5rem]";
+        const idx = series.find(s => s.id == props.id)!.data.findIndex(d => d.label == props.formattedArcLabel);
+        const offset = props.id == "inner" ? 0 : idx;
 
-    function secondStage() {
-        setStage(Stages.Second);
-        xSpring.set(-175);
-    }
+        const [[x, y], setCoords] = useState<[number, number]>([0, 0]);
+        const [rotation, setRotation] = useState(0);
+        const [opacity, setOpacity] = useState(0);
 
-    function thirdStage() {
-        setStage(Stages.Third);
-        xSpring.set(-350);
-    }
+        useEffect(() => {
+            const angle = (parseFloat(props.startAngle.animation.to.toString()) + parseFloat(props.endAngle.animation.to.toString())) / 2 - Math.PI / 2;
+            const radius = (parseFloat(props.innerRadius.animation.to.toString()) + parseFloat(props.outerRadius.animation.to.toString())) / 2;
+
+            setCoords([ radius * Math.cos(angle), radius * Math.sin(angle) ]);
+        }, []);
+
+        useEffect(() => {
+            if (stage == Stages.First)
+                setOpacity(props.id == "inner" ? 1 : 0);
+            else if (stage == Stages.Second) {
+                setOpacity(props.id == "inner" && idx != fItemData!.dataIndex ? 0 : 1);
+
+                if (props.id == "inner")
+                    setRotation(-angles[fItemData!.dataIndex])
+                else if (props.id == "middle")
+                    setOpacity(1);
+            }
+        }, [stage]);
+
+        return (
+            <text className={textSz + " fill-white drop-shadow-md"} textAnchor="middle" style={{ opacity: opacity, transform: `translate3d(${x}px, calc(${y}px + 0.2rem), 0px)`, transformOrigin: `${x}px ${y}px`, rotate: rotation ? `${rotation}deg` : props.id != "middle" ? "0" : `calc(${offset} * 10.5882deg - 120deg + 5.2941deg)` }}>{props.formattedArcLabel}</text>
+        );
+    };
 
     return (
         <main className="min-h-screen">
             {showHomeScreen && (
                 <div className={`h-full p-24 absolute inset-0 bg-white/75 backdrop-blur transition duration-500 z-30 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
                     {!showHelp ? (
-                        <div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
+                        <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
                             <div className="flex flex-col justify-center items-center space-y-10">
                                 <Image src="/logo.svg" alt="Logo" width={72} height={72} />
                                 <h1 className="text-7xl font-bold">Emotion Wheel</h1>
@@ -177,9 +184,9 @@ export default function Home() {
                                     <span>How it works</span>
                                 </Button>
                             </div>
-                        </div>
+                        </animated.div>
                     ) : (
-                        <div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
+                        <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
                             <h2 className="text-6xl font-bold">How it works</h2>
                             <div className="w-128 text-lg text-center space-y-5">
                                 <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
@@ -189,7 +196,7 @@ export default function Home() {
                                 <Icons.ArrowLeft className="w-6 h-6" />
                                 <span>Go back</span>
                             </Button>
-                        </div>
+                        </animated.div>
                     )}
                 </div>
             )}
@@ -200,20 +207,10 @@ export default function Home() {
                         series={series}
                         tooltip={{ trigger: "none" }}
                         margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                        slots={{ pieArcLabel: ArcLabel }}
                         slotProps={{ legend: { hidden: true } }}
                         onItemClick={(_, d) => onItemClick(d)}
                         sx={{
-                            [`& .${pieArcLabelClasses.root}`]: {
-                                fontSize: "0.7rem",
-                                fill: "white",
-                                filter: "drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))"
-                            },
-                            [`&  > g > g:nth-of-type(5) .${pieArcLabelClasses.root}`]: {
-                                fontSize: "0.6rem"
-                            },
-                            [`&  > g > g:nth-of-type(6) .${pieArcLabelClasses.root}`]: {
-                                fontSize: "0.5rem"
-                            },
                             [`& > g`]: {
                                 transition: "opacity 0.5s"
                             },
@@ -227,14 +224,6 @@ export default function Home() {
                             [`& > g > g:nth-of-type(3)`]: {
                                 opacity: stage !== Stages.First && stage !== Stages.Second ? "1" : "0",
                                 pointerEvents: stage == Stages.Third ? "auto" : "none"
-                            },
-                            [`& > g > g:nth-of-type(4)`]: {
-                                opacity: stage >= Stages.First ? "1" : "0",
-                                pointerEvents: "none"
-                            },
-                            [`& > g > g:nth-of-type(5)`]: {
-                                opacity: stage >= Stages.Second ? "1" : "0",
-                                pointerEvents: "none"
                             },
                             [`& > g > g:nth-of-type(6)`]: {
                                 opacity: stage >= Stages.Third ? "1" : "0",
