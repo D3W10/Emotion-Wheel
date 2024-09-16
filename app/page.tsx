@@ -76,7 +76,7 @@ export default function Home() {
     ];
 
     let past: number = 0;
-    const angles = [453.5294, 702.353, 337.0589, 268.2353, 199.4118, 506.4706];
+    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706];
     const childRanges = series[0].data.map(d => Array.from({ length: d.value }, () => past++));
 
     useEffect(() => {
