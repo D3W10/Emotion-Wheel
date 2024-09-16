@@ -231,6 +231,10 @@ export default function Home() {
                             </Button>
                         </animated.div>
                     )}
+                    <div className="flex flex-col justify-end items-end absolute bottom-8 right-8 space-y-0.5">
+                        <p className="text-xs font-normal">Based on the emotion wheel of</p>
+                        <p className="text-xl">Junto Institute</p>
+                    </div>
                 </div>
             )}
             <div className="h-full flex justify-center items-center absolute inset-0">
