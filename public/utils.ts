@@ -1,1 +1,1 @@
-export const springConfig = { config: { mass: 1, friction: 120, tension: 500, precision: 0.001 } };
+export const springConfig = { config: { mass: 1, friction: 200, tension: 500, precision: 0.001 } };
