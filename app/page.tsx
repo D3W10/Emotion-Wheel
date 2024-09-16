@@ -87,11 +87,18 @@ export default function Home() {
             setTimeout(() => setAnimated(true), 50);
 
             ySpring.start(0);
+
+            setPieStyle(1, true);
+            setPieStyle(2, true);
+            setPieStyle(3, true);
         }
         else if (stage === Stages.First) {
             xSpring.start(0);
             ySpring.start(50);
-            resetPieStyle(1);
+
+            setPieStyle(1, true);
+            setPieStyle(2, false);
+            setPieStyle(3, false);
         }
         else if (stage === Stages.Second)
             xSpring.start(-200);
@@ -142,17 +149,17 @@ export default function Home() {
         }
     }
 
+    function setPieStyle(series: 1 | 2 | 3, on = true) {
+        document.querySelectorAll<SVGPathElement>(`#wheel svg > g > g:nth-of-type(${series}) path`).forEach(val => {
+            val.style.opacity = on ? "1" : "0";
+            val.style.pointerEvents = on ? "auto" : "none";
+        });
+    }
+
     function updatePieStyle(series: 1 | 2 | 3, indices: number[], { t, f } = { t: "1", f: "0" }) {
         document.querySelectorAll<SVGPathElement>(`#wheel svg > g > g:nth-of-type(${series}) path`).forEach((val, key) => {
             val.style.opacity = indices.includes(key) ? t : f;
             val.style.pointerEvents = indices.includes(key) ? "auto" : "none";
-        });
-    }
-
-    function resetPieStyle(series: 1 | 2 | 3) {
-        document.querySelectorAll<SVGPathElement>(`#wheel svg > g > g:nth-of-type(${series}) path`).forEach(val => {
-            val.style.opacity = "1";
-            val.style.pointerEvents = "auto";
         });
     }
 
@@ -237,19 +244,11 @@ export default function Home() {
                         slotProps={{ legend: { hidden: true } }}
                         onItemClick={(_, d) => onItemClick(d)}
                         sx={{
-                            ["& > g > g:nth-of-type(1) > g path, & > g > g:nth-of-type(2) > g path, & > g > g:nth-of-type(3) > g path"]: {
+                            ["& > g > g:nth-of-type(1) > g path"]: {
                                 transition: "opacity 1s"
                             },
-                            [`& > g > g:nth-of-type(1)`]: {
-                                pointerEvents: stage == Stages.First ? "auto" : "none"
-                            },
-                            [`& > g > g:nth-of-type(2)`]: {
-                                opacity: stage !== Stages.First ? "1" : "0",
-                                pointerEvents: stage == Stages.Second ? "auto" : "none"
-                            },
-                            [`& > g > g:nth-of-type(3)`]: {
-                                opacity: stage !== Stages.First && stage !== Stages.Second ? "1" : "0",
-                                pointerEvents: stage == Stages.Third ? "auto" : "none"
+                            ["& > g > g:nth-of-type(2) > g path, & > g > g:nth-of-type(3) > g path"]: {
+                                transition: "opacity 0.5s"
                             }
                         }}
                     />
