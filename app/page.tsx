@@ -86,6 +86,7 @@ export default function Home() {
             setHomeScreen(true);
             setTimeout(() => setAnimated(true), 50);
 
+            xSpring.start(0);
             ySpring.start(0);
 
             configPieStyle(true, true, true);
@@ -196,8 +197,22 @@ export default function Home() {
         );
     };
 
+    const ssss = useRef<HTMLCanvasElement | null>(null);
+
+    
+    /* useEffect(() => {
+        const bb = new Image();
+        bb.src = "http://localhost:3000/temp.svg";
+        bb.onload = () => {
+            const context = ssss.current?.getContext("2d")!;
+
+            context.drawImage(bb, 0, 0, 1920, 1080);
+        }
+    }, []); */
+
     return (
         <main className="min-h-screen">
+            {/* <canvas className="fixed inset-0 z-[100]" ref={ssss} width={1920} height={1080} /> */}
             {showHomeScreen && (
                 <div className={`h-full p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
                     {!showHelp ? (
