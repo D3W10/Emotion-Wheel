@@ -13,7 +13,7 @@
     }
 
     body {
-        @apply bg-zinc-50 font-semibold overflow-hidden;
+        @apply text-zinc-950 bg-zinc-50 font-semibold overflow-hidden;
     }
 }
 

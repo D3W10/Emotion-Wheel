@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import NImage from "next/image";
 import { animated, AnimationConfig, SpringConfig, useSpringValue } from "@react-spring/web";
 import { useInterval } from "@/components/useInterval";
 import Button from "@/components/Button";
@@ -9,7 +9,7 @@ import Icons from "@/components/Icons";
 import IconButton from "@/components/IconButton";
 import { PieArcLabelProps, PieChart } from "@mui/x-charts/PieChart";
 import { innerData, middleData, outerData } from "@/public/data";
-import { springConfig } from "@/public/utils";
+import { configPieStyle, css, springConfig, updatePieStyle } from "@/public/utils";
 import type { MakeOptional } from "@mui/x-charts/internals";
 import type { PieItemIdentifier, PieSeriesType, PieValueType } from "@mui/x-charts/models/seriesType";
 
@@ -76,7 +76,7 @@ export default function Home() {
     ];
 
     let past: number = 0;
-    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706];
+    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706], revealDelay = 1800;
     const childRanges = series[0].data.map(d => Array.from({ length: d.value }, () => past++));
 
     useEffect(() => {
@@ -88,22 +88,26 @@ export default function Home() {
 
             ySpring.start(0);
 
-            setPieStyle(1, true);
-            setPieStyle(2, true);
-            setPieStyle(3, true);
+            configPieStyle(true, true, true);
         }
         else if (stage === Stages.First) {
             xSpring.start(0);
             ySpring.start(50);
 
-            setPieStyle(1, true);
-            setPieStyle(2, false);
-            setPieStyle(3, false);
+            configPieStyle(true, false, false);
         }
-        else if (stage === Stages.Second)
+        else if (stage === Stages.Second && fItemData) {
             xSpring.start(-200);
-        else if (stage === Stages.Third)
+
+            updatePieStyle(1, i => i == fItemData.dataIndex ? css.visible : css.faded);
+            setTimeout(() => updatePieStyle(2, i => childRanges[fItemData.dataIndex].includes(i) ? css.active : css.invisible), revealDelay);
+        }
+        else if (stage === Stages.Third && fItemData && sItemData) {
             xSpring.start(-400);
+
+            updatePieStyle(2, i => i == sItemData.dataIndex ? css.visible : childRanges[fItemData.dataIndex].includes(i) ? css.faded : css.invisible);
+            updatePieStyle(3, i => [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(i) ? css.active : css.invisible);
+        }
         else
             xSpring.start(0);
     }, [stage]);
@@ -128,7 +132,6 @@ export default function Home() {
         }
         else if (stage === Stages.Third && sItemData) {
             setStage(Stages.Second);
-            setRotateVal(rotateVal.current + angles[sItemData.dataIndex]);
         }
     }
 
@@ -149,20 +152,6 @@ export default function Home() {
         }
     }
 
-    function setPieStyle(series: 1 | 2 | 3, on = true) {
-        document.querySelectorAll<SVGPathElement>(`#wheel svg > g > g:nth-of-type(${series}) path`).forEach(val => {
-            val.style.opacity = on ? "1" : "0";
-            val.style.pointerEvents = on ? "auto" : "none";
-        });
-    }
-
-    function updatePieStyle(series: 1 | 2 | 3, indices: number[], { t, f } = { t: "1", f: "0" }) {
-        document.querySelectorAll<SVGPathElement>(`#wheel svg > g > g:nth-of-type(${series}) path`).forEach((val, key) => {
-            val.style.opacity = indices.includes(key) ? t : f;
-            val.style.pointerEvents = indices.includes(key) ? "auto" : "none";
-        });
-    }
-
     const ArcLabel = (props: PieArcLabelProps) => {
         const textSz = props.id == "inner" ? "text-[0.7rem]" : props.id == "middle" ? "text-[0.6rem]" : "text-[0.5rem]";
         const idx = series.find(s => s.id == props.id)!.data.findIndex(d => d.label == props.formattedArcLabel);
@@ -180,34 +169,41 @@ export default function Home() {
         }, []);
 
         useEffect(() => {
-            if (stage == Stages.First)
+            if (stage === Stages.First)
                 setOpacity(props.id == "inner" ? 1 : 0);
-            else if (stage == Stages.Second) {
+            else if (stage === Stages.Second && fItemData) {
                 if (props.id == "inner") {
-                    setOpacity(idx != fItemData!.dataIndex ? 0 : 1);
-                    setRotation(-angles[fItemData!.dataIndex])
+                    setOpacity(idx != fItemData.dataIndex ? 0.5 : 1);
+                    setRotation(-angles[fItemData.dataIndex]);
                 }
-                else if (props.id == "middle" && childRanges[fItemData!.dataIndex].includes(idx)) {
+                else if (props.id == "middle" && childRanges[fItemData!.dataIndex].includes(idx))
+                    setTimeout(() => setOpacity(1), revealDelay);
+            }
+            else if (stage === Stages.Third && fItemData && sItemData) {
+                if (props.id == "inner") {
+                    setOpacity(idx != fItemData.dataIndex ? 0.5 : 1);
+                    setRotation(-angles[fItemData.dataIndex]);
+                }
+                else if (props.id == "middle" && childRanges[fItemData.dataIndex].includes(idx))
                     setOpacity(1);
-                    updatePieStyle(1, [fItemData!.dataIndex], { t: "1", f: "0.25"});
-                    updatePieStyle(2, childRanges[fItemData!.dataIndex]);
-                }
+                else if (props.id == "outer" && [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(idx))
+                    setOpacity(1);
             }
         }, [stage]);
 
         return (
-            <text className={textSz + " fill-white drop-shadow-md pointer-events-none"} textAnchor="middle" style={{ opacity: opacity, transform: `translate3d(${x}px, calc(${y}px + 0.2rem), 0px)`, transformOrigin: `${x}px ${y}px`, rotate: rotation ? `${rotation}deg` : props.id == "inner" ? "0" : props.id == "middle" ? `calc(${offset} * 10.5882deg - 120deg + 5.2941deg)` : `calc(${offset} * 10.5882deg - 120deg + 2.64705deg)` }}>{props.formattedArcLabel}</text>
+            <text className={textSz + " fill-zinc-50 drop-shadow-md pointer-events-none"} textAnchor="middle" style={{ opacity: opacity, transform: `translate3d(${x}px, calc(${y}px + 0.2rem), 0px)`, transformOrigin: `${x}px ${y}px`, rotate: rotation ? `${rotation}deg` : props.id == "inner" ? "0" : props.id == "middle" ? `calc(${offset} * 10.5882deg - 120deg + 5.2941deg)` : `calc(${offset} * 5.2941deg - 120deg + 2.64705deg)` }}>{props.formattedArcLabel}</text>
         );
     };
 
     return (
         <main className="min-h-screen">
             {showHomeScreen && (
-                <div className={`h-full p-24 absolute inset-0 bg-white/75 backdrop-blur transition duration-500 z-30 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
+                <div className={`h-full p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
                     {!showHelp ? (
                         <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
                             <div className="flex flex-col justify-center items-center space-y-10">
-                                <Image src="/logo.svg" alt="Logo" width={72} height={72} />
+                                <NImage src="/logo.svg" alt="Logo" width={72} height={72} />
                                 <h1 className="text-7xl font-bold">Emotion Wheel</h1>
                             </div>
                             <div className="flex flex-col justify-center items-center space-y-10">
