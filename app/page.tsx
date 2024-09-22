@@ -79,6 +79,7 @@ export default function Home() {
     const xSpring = useSpringValue(0, springConfig), ySpring = useSpringValue(0, springConfig);
     const labelOpacity = [useState(0), useState(0), useState(0)];
     const setRotateVal = (v: number, config?: Partial<AnimationConfig> | ((key: string) => SpringConfig)) => { rotateVal.current = v; !config ? rotateSpring.start(v) : rotateSpring.start(v, { config }); };
+    const setLabelsOpacity = (l1: number, l2: number, l3: number) => { labelOpacity[0][1](l1); labelOpacity[1][1](l2); labelOpacity[2][1](l3); };
     const homeTransition = useTransition(showHomeScreen, fadeTransitionConfig);
     const pageTransition = useTransition(homePage, fadeTransitionConfig);
     const homeBtnTransition = useTransition(showHomeButton, fadeTransitionConfig);
@@ -106,7 +107,7 @@ export default function Home() {
             ySpring.start(50);
 
             configPieStyle(true, false, false);
-            labelOpacity[0][1](1);
+            setLabelsOpacity(1, 0, 0);
         }
         else if (stage === Stages.Second && fItemData) {
             xSpring.start(xValues[1]);
@@ -114,7 +115,7 @@ export default function Home() {
             updatePieStyle(1, i => i == fItemData.dataIndex ? css.visible : css.faded);
             arcTimeout.current = setTimeout(() => {
                 updatePieStyle(2, i => childRanges[fItemData.dataIndex].includes(i) ? css.active : css.invisible);
-                labelOpacity[1][1](1);
+                setLabelsOpacity(1, 1, 0);
             }, xSpring.get() > xValues[1] ? revealDelay : 0);
             updatePieStyle(3, () => css.invisible);
         }
@@ -123,14 +124,14 @@ export default function Home() {
 
             updatePieStyle(2, i => i == sItemData.dataIndex ? css.visible : childRanges[fItemData.dataIndex].includes(i) ? css.faded : css.invisible);
             updatePieStyle(3, i => [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(i) ? css.active : css.invisible);
-            labelOpacity[2][1](1);
+            setLabelsOpacity(1, 1, 1);
         }
         else if (stage === Stages.Final && fItemData && sItemData && tItemData) {
             xSpring.start(0);
             ySpring.start(0);
 
             configPieStyle(true, true, true);
-            labelOpacity.every(o => o[1](0));
+            setLabelsOpacity(0, 0, 0);
 
             setHomePage(2);
             setTimeout(() => setHomeScreen(true), 2000);
@@ -217,6 +218,14 @@ export default function Home() {
                     setOpacity(idx != fItemData.dataIndex ? 0.5 : 1);
                     setRotation(-angles[fItemData.dataIndex]);
                 }
+                else if (props.id == "middle" && childRanges[fItemData.dataIndex].includes(idx))
+                    setOpacity(1);
+                else if (props.id == "outer" && [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(idx))
+                    setOpacity(1);
+            }
+            else if (stage === Stages.Final && fItemData && sItemData && tItemData) {
+                if (props.id == "inner")
+                    setOpacity(idx != fItemData.dataIndex ? 0.5 : 1);
                 else if (props.id == "middle" && childRanges[fItemData.dataIndex].includes(idx))
                     setOpacity(1);
                 else if (props.id == "outer" && [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(idx))
