@@ -31,7 +31,7 @@ const pieScale: { [key in Stages]: number } = {
 
 export default function Home() {
     let past: number = 0;
-    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706], revealDelay = 1800;
+    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706], middleAngle = 10.5882, revealDelay = 1800;
     const xValues = [0, -200, -400];
 
     const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "type">[] = [
@@ -68,10 +68,9 @@ export default function Home() {
 
     const [stage, setStage] = useState<Stages>(Stages.Intro);
     const [showHomeScreen, setHomeScreen] = useState(true);
-    const [showHelp, setHelp] = useState(false);
-    const [isAnimated, setAnimated] = useState(true);
+    const [homePage, setHomePage] = useState<0 | 1 | 2>(0);
     const [fItemData, setFItemData] = useState<PieItemIdentifier>();
-    const [sItemData, setSItemData] = useState<PieItemIdentifier>();
+    const [sItemData, setSItemData] = useState<PieItemIdentifier & { factor: number}>();
     const [tItemData, setTItemData] = useState<PieItemIdentifier>();
     const [showHomeButton, setShowHomeButton] = useState(false);
     const [showBackButton, setShowBackButton] = useState(false);
@@ -81,7 +80,8 @@ export default function Home() {
     const xSpring = useSpringValue(0, springConfig);
     const ySpring = useSpringValue(0, springConfig);
     const setRotateVal = (v: number, config?: Partial<AnimationConfig> | ((key: string) => SpringConfig)) => { rotateVal.current = v; !config ? rotateSpring.start(v) : rotateSpring.start(v, { config }); };
-    const helpTransition = useTransition(showHelp, fadeTransitionConfig);
+    const homeTransition = useTransition(showHomeScreen, fadeTransitionConfig);
+    const pageTransition = useTransition(homePage, fadeTransitionConfig);
     const homeBtnTransition = useTransition(showHomeButton, fadeTransitionConfig);
     const backBtnTransition = useTransition(showBackButton, fadeTransitionConfig);
 
@@ -92,7 +92,6 @@ export default function Home() {
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
-            setTimeout(() => setAnimated(true), 50);
 
             xSpring.start(0);
             ySpring.start(0);
@@ -100,6 +99,8 @@ export default function Home() {
             configPieStyle(true, true, true);
         }
         else if (stage === Stages.First) {
+            setHomeScreen(false);
+
             xSpring.start(xValues[0]);
             ySpring.start(50);
 
@@ -118,14 +119,20 @@ export default function Home() {
             updatePieStyle(2, i => i == sItemData.dataIndex ? css.visible : childRanges[fItemData.dataIndex].includes(i) ? css.faded : css.invisible);
             updatePieStyle(3, i => [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(i) ? css.active : css.invisible);
         }
-        else
+        else if (stage === Stages.Final && fItemData && sItemData && tItemData) {
             xSpring.start(0);
+            ySpring.start(0);
+
+            configPieStyle(true, true, true);
+
+            setHomePage(2);
+            setTimeout(() => setHomeScreen(true), 2000);
+        }
     }, [stage]);
 
     useInterval(() => setRotateVal((rotateVal.current + 0.2) % 360, { friction: 0, tension: 0 }), stage === Stages.Intro ? 16 : null);
 
     function onStart() {
-        setAnimated(false);
         setStage(Stages.First);
 
         setTimeout(() => setRotateVal(Math.ceil(rotateVal.current / 360) * 360, springConfig.config), 16);
@@ -142,6 +149,7 @@ export default function Home() {
         }
         else if (stage === Stages.Third && sItemData) {
             setStage(Stages.Second);
+            setRotateVal(rotateVal.current + middleAngle * sItemData.factor);
         }
     }
 
@@ -154,11 +162,19 @@ export default function Home() {
         }
         else if (pie.seriesId === "middle") {
             setStage(Stages.Third);
-            setSItemData(pie);
+
+            const range = childRanges[fItemData!.dataIndex], normalizer = range[0];
+            const end = range[range.length - 1] - normalizer;
+            const setPie = { ...pie, factor: pie.dataIndex - normalizer - end / 2 } 
+            setSItemData(setPie);
+
+            setRotateVal(rotateVal.current - middleAngle * setPie.factor);
         }
         else if (pie.seriesId === "outer") {
             setStage(Stages.Final);
             setTItemData(pie);
+
+            setRotateVal(Math.ceil(rotateVal.current / 360) * 360);
         }
     }
 
@@ -208,10 +224,10 @@ export default function Home() {
 
     return (
         <main className="min-h-screen">
-            {showHomeScreen && (
-                <div className={`h-full p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
-                    {helpTransition((style, item) => (
-                        !item ? (
+            {homeTransition((style, item) => item && (
+                <animated.div className="h-full p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30" style={style}>
+                    {pageTransition((style, item) => (
+                        item == 0 ? (
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40" style={style}>
                                 <div className="flex flex-col justify-center items-center space-y-10">
                                     <NImage src="/logo.svg" alt="Logo" width={72} height={72} />
@@ -219,23 +235,37 @@ export default function Home() {
                                 </div>
                                 <div className="flex flex-col justify-center items-center space-y-10">
                                     <Button onClick={onStart}>Start</Button>
-                                    <Button secondary onClick={() => setHelp(true)}>
+                                    <Button secondary onClick={() => setHomePage(1)}>
                                         <Icons.CircleQuestion className="w-6 h-6" />
                                         <span>How it works</span>
                                     </Button>
                                 </div>
                             </animated.div>
-                        ) : (
+                        ) : item == 1 ?(
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
                                 <h2 className="text-6xl font-bold">How it works</h2>
                                 <div className="w-128 text-lg text-center space-y-5">
                                     <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
                                     <p>Just select the emotion that better describes what you're feeling and an overview will be preseted to you in the end.</p>
                                 </div>
-                                <Button secondary onClick={() => setHelp(false)}>
+                                <Button secondary onClick={() => setHomePage(0)}>
                                     <Icons.ArrowLeft className="w-6 h-6" />
                                     <span>Go back</span>
                                 </Button>
+                            </animated.div>
+                        ) : (
+                            <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
+                                <h2 className="text-6xl font-bold">Your emotional journey</h2>
+                                <div className="w-128 text-lg text-center space-y-5">
+                                    <p>Here's your emotional journey, share it with your friends and inspire them to explore their feelings too!</p>
+                                </div>
+                                <div className="flex justify-center items-center space-x-4">
+                                    <Button secondary onClick={() => setHomePage(0)}>
+                                        <Icons.ArrowLeft className="w-6 h-6" />
+                                        <span>Go back</span>
+                                    </Button>
+                                    <Button>Share</Button>
+                                </div>
                             </animated.div>
                         )
                     ))}
@@ -243,8 +273,8 @@ export default function Home() {
                         <p className="text-xs font-normal">Based on the emotion wheel of</p>
                         <p className="text-xl">Junto Institute</p>
                     </div>
-                </div>
-            )}
+                </animated.div>
+            ))}
             <div className="h-full flex justify-center items-center absolute inset-0">
                 <p className={`absolute top-20 text-3xl ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
                 <animated.div id="wheel" className="h-full aspect-square" style={{ x: xSpring, y: ySpring, rotate: rotateSpring.to((t) => t), scale: scaleSpring }}>
@@ -263,6 +293,7 @@ export default function Home() {
                                 transition: "opacity 0.5s"
                             }
                         }}
+                        skipAnimation
                     />
                 </animated.div>
                 {homeBtnTransition((style, item) =>
