@@ -74,11 +74,10 @@ export default function Home() {
     const [tItemData, setTItemData] = useState<PieItemIdentifier>();
     const [showHomeButton, setShowHomeButton] = useState(false);
     const [showBackButton, setShowBackButton] = useState(false);
-    const rotateVal = useRef(0);
-    const rotateSpring = useSpringValue(rotateVal.current, springConfig);
-    const scaleSpring = useSpringValue(0, springConfig);
-    const xSpring = useSpringValue(0, springConfig);
-    const ySpring = useSpringValue(0, springConfig);
+    const rotateVal = useRef(0), arcTimeout = useRef<NodeJS.Timeout>();
+    const rotateSpring = useSpringValue(rotateVal.current, springConfig), scaleSpring = useSpringValue(0, springConfig);
+    const xSpring = useSpringValue(0, springConfig), ySpring = useSpringValue(0, springConfig);
+    const labelOpacity = [useState(0), useState(0), useState(0)];
     const setRotateVal = (v: number, config?: Partial<AnimationConfig> | ((key: string) => SpringConfig)) => { rotateVal.current = v; !config ? rotateSpring.start(v) : rotateSpring.start(v, { config }); };
     const homeTransition = useTransition(showHomeScreen, fadeTransitionConfig);
     const pageTransition = useTransition(homePage, fadeTransitionConfig);
@@ -89,6 +88,7 @@ export default function Home() {
         scaleSpring.start(pieScale[stage]);
         setShowHomeButton(stage != Stages.Intro && stage != Stages.Final);
         setShowBackButton(stage == Stages.Second || stage == Stages.Third);
+        clearTimeout(arcTimeout.current);
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
@@ -106,12 +106,16 @@ export default function Home() {
             ySpring.start(50);
 
             configPieStyle(true, false, false);
+            labelOpacity[0][1](1);
         }
         else if (stage === Stages.Second && fItemData) {
             xSpring.start(xValues[1]);
 
             updatePieStyle(1, i => i == fItemData.dataIndex ? css.visible : css.faded);
-            setTimeout(() => updatePieStyle(2, i => childRanges[fItemData.dataIndex].includes(i) ? css.active : css.invisible), revealDelay);
+            arcTimeout.current = setTimeout(() => {
+                updatePieStyle(2, i => childRanges[fItemData.dataIndex].includes(i) ? css.active : css.invisible);
+                labelOpacity[1][1](1);
+            }, xSpring.get() > xValues[1] ? revealDelay : 0);
             updatePieStyle(3, () => css.invisible);
         }
         else if (stage === Stages.Third && fItemData && sItemData) {
@@ -119,12 +123,14 @@ export default function Home() {
 
             updatePieStyle(2, i => i == sItemData.dataIndex ? css.visible : childRanges[fItemData.dataIndex].includes(i) ? css.faded : css.invisible);
             updatePieStyle(3, i => [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(i) ? css.active : css.invisible);
+            labelOpacity[2][1](1);
         }
         else if (stage === Stages.Final && fItemData && sItemData && tItemData) {
             xSpring.start(0);
             ySpring.start(0);
 
             configPieStyle(true, true, true);
+            labelOpacity.every(o => o[1](0));
 
             setHomePage(2);
             setTimeout(() => setHomeScreen(true), 2000);
@@ -181,7 +187,7 @@ export default function Home() {
 
     const ArcLabel = (props: PieArcLabelProps) => {
         const textSz = props.id == "inner" ? "text-[0.7rem]" : props.id == "middle" ? "text-[0.6rem]" : "text-[0.5rem]";
-        const idx = series.find(s => s.id == props.id)!.data.findIndex(d => d.label == props.formattedArcLabel);
+        const idx = series.find(s => s.id == props.id)!.data.findIndex(d => d.label === props.formattedArcLabel && d.color === props.color);
         const offset = props.id == "inner" ? 0 : idx;
 
         const [[x, y], setCoords] = useState<[number, number]>([0, 0]);
@@ -204,7 +210,7 @@ export default function Home() {
                     setRotation(-angles[fItemData.dataIndex]);
                 }
                 else if (props.id == "middle" && childRanges[fItemData!.dataIndex].includes(idx))
-                    setTimeout(() => setOpacity(1), revealDelay);
+                    setOpacity(1);
             }
             else if (stage === Stages.Third && fItemData && sItemData) {
                 if (props.id == "inner") {
@@ -313,6 +319,18 @@ export default function Home() {
                                 transition: "opacity 1s"
                             },
                             ["& > g > g:nth-of-type(2) > g path, & > g > g:nth-of-type(3) > g path"]: {
+                                transition: "opacity 0.5s"
+                            },
+                            ["& > g > g:nth-of-type(4) > g"]: {
+                                opacity: labelOpacity[0][0],
+                                transition: "opacity 0.5s"
+                            },
+                            ["& > g > g:nth-of-type(5) > g"]: {
+                                opacity: labelOpacity[1][0],
+                                transition: "opacity 0.5s"
+                            },
+                            ["& > g > g:nth-of-type(6) > g"]: {
+                                opacity: labelOpacity[2][0],
                                 transition: "opacity 0.5s"
                             }
                         }}
