@@ -134,7 +134,7 @@ export default function Home() {
             setLabelsOpacity(0, 0, 0);
 
             setHomePage(2);
-            setTimeout(() => setHomeScreen(true), 2000);
+            setTimeout(() => setHomeScreen(true), 1500);
         }
     }, [stage]);
 
@@ -247,7 +247,7 @@ export default function Home() {
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40" style={style}>
                                 <div className="flex flex-col justify-center items-center space-y-10">
                                     <NImage src="/logo.svg" alt="Logo" width={72} height={72} />
-                                    <h1 className="text-7xl font-bold">Emotion Wheel</h1>
+                                    <h1 className="text-center text-7xl font-bold">Emotion Wheel</h1>
                                 </div>
                                 <div className="flex flex-col justify-center items-center space-y-10">
                                     <Button onClick={onStart}>Start</Button>
@@ -259,7 +259,7 @@ export default function Home() {
                             </animated.div>
                         ) : item == 1 ?(
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
-                                <h2 className="text-6xl font-bold">How it works</h2>
+                                <h2 className="text-center text-6xl font-bold">How it works</h2>
                                 <div className="w-136 text-xl text-center space-y-5">
                                     <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
                                     <p>Just select the emotion that better describes what you're feeling and an overview will be presented to you in the end.</p>
@@ -271,7 +271,7 @@ export default function Home() {
                             </animated.div>
                         ) : (
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
-                                <h2 className="text-6xl font-bold">Your emotional journey</h2>
+                                <h2 className="text-center text-6xl font-bold">Your emotional journey</h2>
                                 <div className="flex flex-col justify-center items-center space-y-10">
                                     <div className="w-136 text-xl text-center space-y-5">
                                         <p>Here's your emotional journey, share it with your friends and inspire them to explore their feelings too!</p>
@@ -307,14 +307,14 @@ export default function Home() {
                             </animated.div>
                         )
                     ))}
-                    <div className="flex flex-col justify-end items-end absolute bottom-8 right-8 space-y-0.5">
+                    <div className="flex flex-col justify-end items-end absolute bottom-8 right-8 text-right space-y-0.5">
                         <p className="text-xs font-normal">Based on the emotion wheel of</p>
                         <p className="text-xl">Junto Institute</p>
                     </div>
                 </animated.div>
             ))}
             <div className="h-full flex justify-center items-center absolute inset-0">
-                <p className={`absolute top-20 text-3xl ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
+                <p className={`absolute top-20 text-3xl text-center ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
                 <animated.div id="wheel" className="h-full aspect-square" style={{ x: xSpring, y: ySpring, rotate: rotateSpring.to((t) => t), scale: scaleSpring }}>
                     <PieChart
                         series={series}
