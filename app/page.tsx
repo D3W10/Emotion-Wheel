@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import NImage from "next/image";
-import { animated, AnimationConfig, SpringConfig, useSpringValue } from "@react-spring/web";
+import { animated, AnimationConfig, SpringConfig, useSpringValue, useTransition } from "@react-spring/web";
 import { useInterval } from "@/components/useInterval";
 import Button from "@/components/Button";
 import Icons from "@/components/Icons";
@@ -30,20 +30,9 @@ const pieScale: { [key in Stages]: number } = {
 }
 
 export default function Home() {
-    const [stage, setStage] = useState<Stages>(Stages.Intro);
-    const [showHomeScreen, setHomeScreen] = useState(true);
-    const [showHelp, setHelp] = useState(false);
-    const [isAnimated, setAnimated] = useState(true);
-    const [fItemData, setFItemData] = useState<PieItemIdentifier>();
-    const [sItemData, setSItemData] = useState<PieItemIdentifier>();
-    const [tItemData, setTItemData] = useState<PieItemIdentifier>();
-    const rotateVal = useRef(0);
-
-    const rotateSpring = useSpringValue(rotateVal.current, springConfig);
-    const scaleSpring = useSpringValue(0, springConfig);
-    const xSpring = useSpringValue(0, springConfig);
-    const ySpring = useSpringValue(0, springConfig);
-    const setRotateVal = (v: number, config?: Partial<AnimationConfig> | ((key: string) => SpringConfig)) => { rotateVal.current = v; !config ? rotateSpring.start(v) : rotateSpring.start(v, { config }); };
+    let past: number = 0;
+    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706], revealDelay = 1800;
+    const xValues = [0, -200, -400];
 
     const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "type">[] = [
         {
@@ -74,13 +63,32 @@ export default function Home() {
             data: outerData
         }
     ];
-
-    let past: number = 0;
-    const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706], revealDelay = 1800;
     const childRanges = series[0].data.map(d => Array.from({ length: d.value }, () => past++));
+    const fadeTransitionConfig = { from: { opacity: 0 }, enter: { opacity: 1 }, leave: { opacity: 0 }, config: { duration: 300 }, exitBeforeEnter: true };
+
+    const [stage, setStage] = useState<Stages>(Stages.Intro);
+    const [showHomeScreen, setHomeScreen] = useState(true);
+    const [showHelp, setHelp] = useState(false);
+    const [isAnimated, setAnimated] = useState(true);
+    const [fItemData, setFItemData] = useState<PieItemIdentifier>();
+    const [sItemData, setSItemData] = useState<PieItemIdentifier>();
+    const [tItemData, setTItemData] = useState<PieItemIdentifier>();
+    const [showHomeButton, setShowHomeButton] = useState(false);
+    const [showBackButton, setShowBackButton] = useState(false);
+    const rotateVal = useRef(0);
+    const rotateSpring = useSpringValue(rotateVal.current, springConfig);
+    const scaleSpring = useSpringValue(0, springConfig);
+    const xSpring = useSpringValue(0, springConfig);
+    const ySpring = useSpringValue(0, springConfig);
+    const setRotateVal = (v: number, config?: Partial<AnimationConfig> | ((key: string) => SpringConfig)) => { rotateVal.current = v; !config ? rotateSpring.start(v) : rotateSpring.start(v, { config }); };
+    const helpTransition = useTransition(showHelp, fadeTransitionConfig);
+    const homeBtnTransition = useTransition(showHomeButton, fadeTransitionConfig);
+    const backBtnTransition = useTransition(showBackButton, fadeTransitionConfig);
 
     useEffect(() => {
         scaleSpring.start(pieScale[stage]);
+        setShowHomeButton(stage != Stages.Intro && stage != Stages.Final);
+        setShowBackButton(stage == Stages.Second || stage == Stages.Third);
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
@@ -92,19 +100,20 @@ export default function Home() {
             configPieStyle(true, true, true);
         }
         else if (stage === Stages.First) {
-            xSpring.start(0);
+            xSpring.start(xValues[0]);
             ySpring.start(50);
 
             configPieStyle(true, false, false);
         }
         else if (stage === Stages.Second && fItemData) {
-            xSpring.start(-200);
+            xSpring.start(xValues[1]);
 
             updatePieStyle(1, i => i == fItemData.dataIndex ? css.visible : css.faded);
             setTimeout(() => updatePieStyle(2, i => childRanges[fItemData.dataIndex].includes(i) ? css.active : css.invisible), revealDelay);
+            updatePieStyle(3, () => css.invisible);
         }
         else if (stage === Stages.Third && fItemData && sItemData) {
-            xSpring.start(-400);
+            xSpring.start(xValues[2]);
 
             updatePieStyle(2, i => i == sItemData.dataIndex ? css.visible : childRanges[fItemData.dataIndex].includes(i) ? css.faded : css.invisible);
             updatePieStyle(3, i => [sItemData.dataIndex * 2, sItemData.dataIndex * 2 + 1].includes(i) ? css.active : css.invisible);
@@ -197,51 +206,39 @@ export default function Home() {
         );
     };
 
-    const ssss = useRef<HTMLCanvasElement | null>(null);
-
-    
-    /* useEffect(() => {
-        const bb = new Image();
-        bb.src = "http://localhost:3000/temp.svg";
-        bb.onload = () => {
-            const context = ssss.current?.getContext("2d")!;
-
-            context.drawImage(bb, 0, 0, 1920, 1080);
-        }
-    }, []); */
-
     return (
         <main className="min-h-screen">
-            {/* <canvas className="fixed inset-0 z-[100]" ref={ssss} width={1920} height={1080} /> */}
             {showHomeScreen && (
                 <div className={`h-full p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30 ${isAnimated ? "ease-out opacity-100 scale-100" : "ease-in opacity-0 scale-125"}`} onTransitionEnd={e => e.propertyName == "opacity" && !isAnimated && setHomeScreen(false)}>
-                    {!showHelp ? (
-                        <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
-                            <div className="flex flex-col justify-center items-center space-y-10">
-                                <NImage src="/logo.svg" alt="Logo" width={72} height={72} />
-                                <h1 className="text-7xl font-bold">Emotion Wheel</h1>
-                            </div>
-                            <div className="flex flex-col justify-center items-center space-y-10">
-                                <Button onClick={onStart}>Start</Button>
-                                <Button secondary onClick={() => setHelp(true)}>
-                                    <Icons.CircleQuestion className="w-6 h-6" />
-                                    <span>How it works</span>
+                    {helpTransition((style, item) => (
+                        !item ? (
+                            <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40" style={style}>
+                                <div className="flex flex-col justify-center items-center space-y-10">
+                                    <NImage src="/logo.svg" alt="Logo" width={72} height={72} />
+                                    <h1 className="text-7xl font-bold">Emotion Wheel</h1>
+                                </div>
+                                <div className="flex flex-col justify-center items-center space-y-10">
+                                    <Button onClick={onStart}>Start</Button>
+                                    <Button secondary onClick={() => setHelp(true)}>
+                                        <Icons.CircleQuestion className="w-6 h-6" />
+                                        <span>How it works</span>
+                                    </Button>
+                                </div>
+                            </animated.div>
+                        ) : (
+                            <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
+                                <h2 className="text-6xl font-bold">How it works</h2>
+                                <div className="w-128 text-lg text-center space-y-5">
+                                    <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
+                                    <p>Just select the emotion that better describes what you're feeling and an overview will be preseted to you in the end.</p>
+                                </div>
+                                <Button secondary onClick={() => setHelp(false)}>
+                                    <Icons.ArrowLeft className="w-6 h-6" />
+                                    <span>Go back</span>
                                 </Button>
-                            </div>
-                        </animated.div>
-                    ) : (
-                        <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40">
-                            <h2 className="text-6xl font-bold">How it works</h2>
-                            <div className="w-128 text-lg text-center space-y-5">
-                                <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
-                                <p>Just select the emotion that better describes what you're feeling and an overview will be preseted to you in the end.</p>
-                            </div>
-                            <Button secondary onClick={() => setHelp(false)}>
-                                <Icons.ArrowLeft className="w-6 h-6" />
-                                <span>Go back</span>
-                            </Button>
-                        </animated.div>
-                    )}
+                            </animated.div>
+                        )
+                    ))}
                     <div className="flex flex-col justify-end items-end absolute bottom-8 right-8 space-y-0.5">
                         <p className="text-xs font-normal">Based on the emotion wheel of</p>
                         <p className="text-xl">Junto Institute</p>
@@ -268,13 +265,23 @@ export default function Home() {
                         }}
                     />
                 </animated.div>
-                <IconButton className="fixed bottom-6 left-6" onClick={onReset}>
-                    <Icons.Home className="w-8 h-8" />
-                </IconButton>
-                {stage != Stages.Intro && stage != Stages.First && (
-                    <IconButton className="fixed bottom-6 right-6" onClick={onBack}>
-                        <Icons.ArrowStepInLeft className="w-8 h-8" />
-                    </IconButton>
+                {homeBtnTransition((style, item) =>
+                    item && (
+                        <animated.div className="fixed bottom-6 left-6" style={style}>
+                            <IconButton onClick={onReset}>
+                                <Icons.Home className="w-8 h-8" />
+                            </IconButton>
+                        </animated.div>
+                    )
+                )}
+                {backBtnTransition((style, item) =>
+                    item && (
+                        <animated.div className="fixed bottom-6 right-6" style={style}>
+                            <IconButton onClick={onBack}>
+                                <Icons.ArrowStepInLeft className="w-8 h-8" />
+                            </IconButton>
+                        </animated.div>
+                    )
                 )}
             </div>
         </main>
