@@ -92,6 +92,7 @@ export default function Home() {
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
+            setHomePage(0);
 
             xSpring.start(0);
             ySpring.start(0);
@@ -244,9 +245,9 @@ export default function Home() {
                         ) : item == 1 ?(
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
                                 <h2 className="text-6xl font-bold">How it works</h2>
-                                <div className="w-128 text-lg text-center space-y-5">
+                                <div className="w-136 text-xl text-center space-y-5">
                                     <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
-                                    <p>Just select the emotion that better describes what you're feeling and an overview will be preseted to you in the end.</p>
+                                    <p>Just select the emotion that better describes what you're feeling and an overview will be presented to you in the end.</p>
                                 </div>
                                 <Button secondary onClick={() => setHomePage(0)}>
                                     <Icons.ArrowLeft className="w-6 h-6" />
@@ -256,11 +257,33 @@ export default function Home() {
                         ) : (
                             <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
                                 <h2 className="text-6xl font-bold">Your emotional journey</h2>
-                                <div className="w-128 text-lg text-center space-y-5">
-                                    <p>Here's your emotional journey, share it with your friends and inspire them to explore their feelings too!</p>
+                                <div className="flex flex-col justify-center items-center space-y-10">
+                                    <div className="w-136 text-xl text-center space-y-5">
+                                        <p>Here's your emotional journey, share it with your friends and inspire them to explore their feelings too!</p>
+                                    </div>
+                                    <div className="w-160 grid *:row-[1] *:col-[1]">
+                                        <div className="flex justify-around items-center text-xl text-zinc-50 text-center drop-shadow-md z-10 *:w-1/3">
+                                            <p>{innerData[fItemData!.dataIndex].label?.toString()}</p>
+                                            <p>{middleData[sItemData!.dataIndex].label?.toString()}</p>
+                                            <p>{outerData[tItemData!.dataIndex].label?.toString()}</p>
+                                        </div>
+                                        <svg viewBox="0 0 1387 150" className="w-full z-0" style={{ fillRule: "evenodd", clipRule: "evenodd", strokeLinejoin: "round", strokeMiterlimit: 2 }}>
+                                            <g transform="matrix(1,0,0,1,-253.911,-390)">
+                                                <g transform="matrix(1,0,0,1,-163.552,93.5793)">
+                                                    <path d="M492.463,446.421C451.069,446.421 417.463,412.814 417.463,371.421C417.463,330.027 451.069,296.421 492.463,296.421L917.463,296.421L830.86,446.421L492.463,446.421Z" style={{ fill: innerData[fItemData!.dataIndex].color }}/>
+                                                </g>
+                                                <g transform="matrix(1,0,0,1,-176.806,93.5793)">
+                                                    <path d="M1287.61,446.421L874.217,446.421L960.819,296.421L1374.22,296.421L1287.61,446.421Z" style={{ fill: middleData[sItemData!.dataIndex].color }}/>
+                                                </g>
+                                                <g transform="matrix(-1,-1.22465e-16,1.22465e-16,-1,2058.37,836.421)">
+                                                    <path d="M492.463,296.421L917.463,296.421L830.86,446.421L492.463,446.421C451.069,446.421 417.463,412.814 417.463,371.421C417.463,330.027 451.069,296.421 492.463,296.421Z" style={{ fill: outerData[tItemData!.dataIndex].color }}/>
+                                                </g>
+                                            </g>
+                                        </svg>
+                                    </div>
                                 </div>
                                 <div className="flex justify-center items-center space-x-4">
-                                    <Button secondary onClick={() => setHomePage(0)}>
+                                    <Button secondary onClick={onReset}>
                                         <Icons.ArrowLeft className="w-6 h-6" />
                                         <span>Go back</span>
                                     </Button>
