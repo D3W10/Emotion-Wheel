@@ -9,7 +9,7 @@ import Icons from "@/components/Icons";
 import IconButton from "@/components/IconButton";
 import { PieArcLabelProps, PieChart } from "@mui/x-charts/PieChart";
 import { innerData, middleData, outerData } from "@/public/data";
-import { configPieStyle, css, springConfig, updatePieStyle } from "@/public/utils";
+import { configPieStyle, css, generateCard, springConfig, updatePieStyle } from "@/public/utils";
 import type { MakeOptional } from "@mui/x-charts/internals";
 import type { PieItemIdentifier, PieSeriesType, PieValueType } from "@mui/x-charts/models/seriesType";
 
@@ -86,6 +86,7 @@ export default function Home() {
     const [showHomeButton, setShowHomeButton] = useState(false);
     const [showBackButton, setShowBackButton] = useState(false);
     const rotateVal = useRef(0), arcTimeout = useRef<NodeJS.Timeout>();
+    const shareCanvas = useRef<HTMLCanvasElement | null>(null);
     const rotateSpring = useSpringValue(rotateVal.current, springConfig), scaleSpring = useSpringValue(0, springConfig);
     const xSpring = useSpringValue(0, springConfig), ySpring = useSpringValue(0, springConfig);
     const labelOpacity = [useState(0), useState(0), useState(0)];
@@ -180,6 +181,25 @@ export default function Home() {
         else if (stage === Stages.Third && sItemData) {
             setStage(Stages.Second);
             setRotateVal(rotateVal.current + middleAngle * sItemData.factor);
+        }
+    }
+
+    function onShare() {
+        const uri = "data:image/svg+xml;charset=utf8," + encodeURIComponent(generateCard(outerData[fItemData!.dataIndex], outerData[sItemData!.dataIndex], outerData[tItemData!.dataIndex]));
+
+        const shareImage = new Image();
+        shareImage.src = uri;
+        shareImage.onload = () => {
+            const context = shareCanvas.current?.getContext("2d")!;
+            context.drawImage(shareImage, 0, 0, 1800, 1080);
+
+            shareCanvas.current?.toBlob(async data => data &&
+                await navigator.share({
+                    title: "Emotion Wheel",
+                    text: "Here's the stack of emotions I'm feeling today. Discover yours too and let's embrace them together!",
+                    files: [new File([data], "My Emotional Journey.png", { type: "image/png" })]
+                })
+            );
         }
     }
 
@@ -324,7 +344,7 @@ export default function Home() {
                                         <Icons.ArrowLeft className="w-6 h-6" />
                                         <span>Go back</span>
                                     </Button>
-                                    <Button>Share</Button>
+                                    <Button onClick={onShare}>Share</Button>
                                 </div>
                             </animated.div>
                         )
@@ -387,6 +407,7 @@ export default function Home() {
                     )
                 )}
             </div>
+            <canvas className="hidden" ref={shareCanvas} width={1800} height={1080} />
         </main>
     )
 }
