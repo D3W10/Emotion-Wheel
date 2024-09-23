@@ -109,6 +109,7 @@ export default function Home() {
         clearTimeout(arcTimeout.current);
 
         window.addEventListener("resize", updateMobileStatus);
+        updateMobileStatus();
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
