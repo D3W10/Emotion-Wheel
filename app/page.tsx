@@ -21,18 +21,28 @@ enum Stages {
     Final
 }
 
-const pieScale: { [key in Stages]: number } = {
-    [Stages.Intro]: 1.6,
-    [Stages.First]: 2.8,
-    [Stages.Second]: 2.5,
-    [Stages.Third]: 2.5,
-    [Stages.Final]: 1.6
-}
+type StageScale = { [key in Stages]: number };
 
 export default function Home() {
     let past: number = 0;
     const angles = [453.5294, 395.2941, 337.0589, 268.2353, 199.4118, 506.4706], middleAngle = 10.5882, revealDelay = 1800;
     const xValues = [0, -200, -400];
+    const pieScale: { desktop: StageScale, mobile: StageScale } = {
+        desktop: {
+            [Stages.Intro]: 1.6,
+            [Stages.First]: 2.8,
+            [Stages.Second]: 2.5,
+            [Stages.Third]: 2.5,
+            [Stages.Final]: 1.6
+        },
+        mobile: {
+            [Stages.Intro]: 0.8,
+            [Stages.First]: 2,
+            [Stages.Second]: 1.7,
+            [Stages.Third]: 1.7,
+            [Stages.Final]: 0.8
+        }
+    }
 
     const series: MakeOptional<PieSeriesType<MakeOptional<PieValueType, "id">>, "type">[] = [
         {
@@ -67,6 +77,7 @@ export default function Home() {
     const fadeTransitionConfig = { from: { opacity: 0 }, enter: { opacity: 1 }, leave: { opacity: 0 }, config: { duration: 300 }, exitBeforeEnter: true };
 
     const [stage, setStage] = useState<Stages>(Stages.Intro);
+    const [isMobile, setMobile] = useState(false);
     const [showHomeScreen, setHomeScreen] = useState(true);
     const [homePage, setHomePage] = useState<0 | 1 | 2>(0);
     const [fItemData, setFItemData] = useState<PieItemIdentifier>();
@@ -84,12 +95,20 @@ export default function Home() {
     const pageTransition = useTransition(homePage, fadeTransitionConfig);
     const homeBtnTransition = useTransition(showHomeButton, fadeTransitionConfig);
     const backBtnTransition = useTransition(showBackButton, fadeTransitionConfig);
+    const updateMobileStatus = () => {
+        const mobile = window.innerWidth < 768;
+
+        setMobile(mobile);
+        scaleSpring.start(pieScale[!mobile ? "desktop" : "mobile"][stage]);
+    };
 
     useEffect(() => {
-        scaleSpring.start(pieScale[stage]);
+        scaleSpring.start(pieScale[!isMobile ? "desktop" : "mobile"][stage]);
         setShowHomeButton(stage != Stages.Intro && stage != Stages.Final);
         setShowBackButton(stage == Stages.Second || stage == Stages.Third);
         clearTimeout(arcTimeout.current);
+
+        window.addEventListener("resize", updateMobileStatus);
 
         if (stage === Stages.Intro) {
             setHomeScreen(true);
@@ -136,6 +155,8 @@ export default function Home() {
             setHomePage(2);
             setTimeout(() => setHomeScreen(true), 1500);
         }
+
+        return () => window.removeEventListener("resize", updateMobileStatus);
     }, [stage]);
 
     useInterval(() => setRotateVal((rotateVal.current + 0.2) % 360, { friction: 0, tension: 0 }), stage === Stages.Intro ? 16 : null);
@@ -241,13 +262,13 @@ export default function Home() {
     return (
         <main className="min-h-screen">
             {homeTransition((style, item) => item && (
-                <animated.div className="h-full p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30" style={style}>
+                <animated.div className="h-full p-6 md:p-24 absolute inset-0 bg-zinc-50/75 backdrop-blur transition duration-500 z-30" style={style}>
                     {pageTransition((style, item) => (
                         item == 0 ? (
-                            <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-40" style={style}>
+                            <animated.div className="p-6 flex flex-col justify-center items-center absolute inset-0 space-y-40" style={style}>
                                 <div className="flex flex-col justify-center items-center space-y-10">
-                                    <NImage src="/logo.svg" alt="Logo" width={72} height={72} />
-                                    <h1 className="text-center text-7xl font-bold">Emotion Wheel</h1>
+                                    <NImage className="w-14 h-14 md:w-18 md:h-18" src="/logo.svg" alt="Logo" width={72} height={72} />
+                                    <h1 className="text-center text-5xl md:text-7xl font-bold">Emotion Wheel</h1>
                                 </div>
                                 <div className="flex flex-col justify-center items-center space-y-10">
                                     <Button onClick={onStart}>Start</Button>
@@ -258,9 +279,9 @@ export default function Home() {
                                 </div>
                             </animated.div>
                         ) : item == 1 ?(
-                            <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
-                                <h2 className="text-center text-6xl font-bold">How it works</h2>
-                                <div className="w-136 text-xl text-center space-y-5">
+                            <animated.div className="p-6 flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
+                                <h2 className="text-center text-4xl md:text-6xl font-bold">How it works</h2>
+                                <div className="sm:w-136 text-base md:text-xl text-center space-y-5">
                                     <p>You will be asked what you feel three times, showing more precise emotions as the questions progress.</p>
                                     <p>Just select the emotion that better describes what you're feeling and an overview will be presented to you in the end.</p>
                                 </div>
@@ -270,14 +291,14 @@ export default function Home() {
                                 </Button>
                             </animated.div>
                         ) : (
-                            <animated.div className="flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
-                                <h2 className="text-center text-6xl font-bold">Your emotional journey</h2>
+                            <animated.div className="p-6 flex flex-col justify-center items-center absolute inset-0 space-y-24" style={style}>
+                                <h2 className="text-center text-4xl md:text-6xl font-bold">Your emotional journey</h2>
                                 <div className="flex flex-col justify-center items-center space-y-10">
-                                    <div className="w-136 text-xl text-center space-y-5">
+                                    <div className="sm:w-136 text-base md:text-xl text-center space-y-5">
                                         <p>Here's your emotional journey, share it with your friends and inspire them to explore their feelings too!</p>
                                     </div>
-                                    <div className="w-160 grid *:row-[1] *:col-[1]">
-                                        <div className="flex justify-around items-center text-xl text-zinc-50 text-center drop-shadow-md z-10 *:w-1/3">
+                                    <div className="w-full sm:w-160 grid *:row-[1] *:col-[1]">
+                                        <div className="flex justify-around items-center text-lg md:text-xl text-zinc-50 text-center drop-shadow-md z-10 *:w-1/3">
                                             <p>{innerData[fItemData!.dataIndex].label?.toString()}</p>
                                             <p>{middleData[sItemData!.dataIndex].label?.toString()}</p>
                                             <p>{outerData[tItemData!.dataIndex].label?.toString()}</p>
@@ -307,14 +328,14 @@ export default function Home() {
                             </animated.div>
                         )
                     ))}
-                    <div className="flex flex-col justify-end items-end absolute bottom-8 right-8 text-right space-y-0.5">
-                        <p className="text-xs font-normal">Based on the emotion wheel of</p>
-                        <p className="text-xl">Junto Institute</p>
+                    <div className="flex flex-col justify-end items-end absolute bottom-4 md:bottom-8 right-4 md:right-8 text-right space-y-0.5">
+                        <p className="text-2xs md:text-xs font-normal">Based on the emotion wheel of</p>
+                        <p className="text-lg md:text-xl">Junto Institute</p>
                     </div>
                 </animated.div>
             ))}
-            <div className="h-full flex justify-center items-center absolute inset-0">
-                <p className={`absolute top-20 text-3xl text-center ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
+            <div className="h-full flex justify-center items-center absolute inset-0 overflow-hidden">
+                <p className={`absolute top-20 left-6 right-6 text-2xl md:text-3xl text-center ${[Stages.First, Stages.Second, Stages.Third].includes(stage) ? "opacity-100 delay-1000" : "opacity-0"} duration-[2.5s] z-10`}>Choose the emotion that better describes you</p>
                 <animated.div id="wheel" className="h-full aspect-square" style={{ x: xSpring, y: ySpring, rotate: rotateSpring.to((t) => t), scale: scaleSpring }}>
                     <PieChart
                         series={series}
