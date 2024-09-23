@@ -185,7 +185,7 @@ export default function Home() {
     }
 
     function onShare() {
-        const uri = "data:image/svg+xml;charset=utf8," + encodeURIComponent(generateCard(outerData[fItemData!.dataIndex], outerData[sItemData!.dataIndex], outerData[tItemData!.dataIndex]));
+        const uri = "data:image/svg+xml;charset=utf8," + encodeURIComponent(generateCard(innerData[fItemData!.dataIndex], middleData[sItemData!.dataIndex], outerData[tItemData!.dataIndex]));
 
         const shareImage = new Image();
         shareImage.src = uri;
