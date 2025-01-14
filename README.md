@@ -41,7 +41,7 @@ Emotion Wheel is a web application that helps you uncover the best words to desc
 
 - [TypeScript](https://www.typescriptlang.org/)
 - [Next.js](https://nextjs.org/)
-- [React.js](https://reactjs.org/)
+- [React](https://reactjs.org/)
 - [TailwindCSS](https://tailwindcss.com/)
 
 <br />
